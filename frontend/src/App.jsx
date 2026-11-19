@@ -1,31 +1,14 @@
-
-import { useState } from "react";
-import {
-  Activity,
-  Users,
-  TrendingUp,
-  ShieldCheck,
-  Zap,
-  Search,
-  Bell,
-  ChevronDown,
-  UserRound,
-  CreditCard,
-  Wifi,
-  CheckCircle2,
-  AlertTriangle,
-  Loader2,
-  BrainCircuit,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import "./App.css";
 
 const API_URL = "http://127.0.0.1:5000/predict";
 
-const initialForm = {
+const DEFAULT_FORM = {
   gender: "Female",
-  SeniorCitizen: "0",
+  SeniorCitizen: 0,
   Partner: "Yes",
   Dependents: "No",
-  tenure: "5",
+  tenure: 5,
   PhoneService: "Yes",
   MultipleLines: "No",
   InternetService: "Fiber optic",
@@ -38,508 +21,1386 @@ const initialForm = {
   Contract: "Month-to-month",
   PaperlessBilling: "Yes",
   PaymentMethod: "Electronic check",
-  MonthlyCharges: "75.50",
-  TotalCharges: "377.50",
+  MonthlyCharges: 75.50,
+  TotalCharges: 377.50,
 };
 
-const fields = [
+const COHORT_SAMPLES = [
   {
-    title: "Personal Information",
-    icon: UserRound,
-    items: [
-      { name: "gender", label: "Gender", options: ["Female", "Male"] },
-      { name: "SeniorCitizen", label: "Senior Citizen", options: ["0", "1"] },
-      { name: "Partner", label: "Has Partner", options: ["Yes", "No"] },
-      { name: "Dependents", label: "Dependents", options: ["Yes", "No"] },
-    ],
+    id: 1,
+    label: "Case 1 · New Fiber Optic Churner",
+    category: "High Risk",
+    riskClass: "badge-high",
+    prob: "78.4%",
+    contract: "Month-to-month",
+    internet: "Fiber optic",
+    tenure: "5 months",
+    charges: "$75.50/mo",
+    notes: "Short tenure, electronic check, lack of tech support and security add-ons.",
+    data: {
+      gender: "Female",
+      SeniorCitizen: 0,
+      Partner: "Yes",
+      Dependents: "No",
+      tenure: 5,
+      PhoneService: "Yes",
+      MultipleLines: "No",
+      InternetService: "Fiber optic",
+      OnlineSecurity: "No",
+      OnlineBackup: "No",
+      DeviceProtection: "No",
+      TechSupport: "No",
+      StreamingTV: "No",
+      StreamingMovies: "No",
+      Contract: "Month-to-month",
+      PaperlessBilling: "Yes",
+      PaymentMethod: "Electronic check",
+      MonthlyCharges: 75.50,
+      TotalCharges: 377.50,
+    },
   },
   {
-    title: "Service Information",
-    icon: Wifi,
-    items: [
-      { name: "PhoneService", label: "Phone Service", options: ["Yes", "No"] },
-      {
-        name: "MultipleLines",
-        label: "Multiple Lines",
-        options: ["Yes", "No", "No phone service"],
-      },
-      {
-        name: "InternetService",
-        label: "Internet Service",
-        options: ["DSL", "Fiber optic", "No"],
-      },
-      ...[
-        "OnlineSecurity",
-        "OnlineBackup",
-        "DeviceProtection",
-        "TechSupport",
-        "StreamingTV",
-        "StreamingMovies",
-      ].map((name) => ({
-        name,
-        label: name.replace(/([A-Z])/g, " $1"),
-        options: ["Yes", "No", "No internet service"],
-      })),
-    ],
+    id: 2,
+    label: "Case 2 · High-Spend Month-to-Month",
+    category: "High Risk",
+    riskClass: "badge-high",
+    prob: "83.1%",
+    contract: "Month-to-month",
+    internet: "Fiber optic",
+    tenure: "2 months",
+    charges: "$99.85/mo",
+    notes: "High monthly commitment without long-term agreement or device protection.",
+    data: {
+      gender: "Male",
+      SeniorCitizen: 1,
+      Partner: "No",
+      Dependents: "No",
+      tenure: 2,
+      PhoneService: "Yes",
+      MultipleLines: "Yes",
+      InternetService: "Fiber optic",
+      OnlineSecurity: "No",
+      OnlineBackup: "No",
+      DeviceProtection: "No",
+      TechSupport: "No",
+      StreamingTV: "Yes",
+      StreamingMovies: "Yes",
+      Contract: "Month-to-month",
+      PaperlessBilling: "Yes",
+      PaymentMethod: "Electronic check",
+      MonthlyCharges: 99.85,
+      TotalCharges: 199.70,
+    },
   },
   {
-    title: "Account Information",
-    icon: CreditCard,
-    items: [
-      {
-        name: "Contract",
-        label: "Contract Type",
-        options: ["Month-to-month", "One year", "Two year"],
-      },
-      {
-        name: "PaperlessBilling",
-        label: "Paperless Billing",
-        options: ["Yes", "No"],
-      },
-      {
-        name: "PaymentMethod",
-        label: "Payment Method",
-        options: [
-          "Electronic check",
-          "Mailed check",
-          "Bank transfer (automatic)",
-          "Credit card (automatic)",
-        ],
-      },
-    ],
+    id: 3,
+    label: "Case 3 · Transitioning DSL User",
+    category: "Medium Risk",
+    riskClass: "badge-medium",
+    prob: "52.8%",
+    contract: "One year",
+    internet: "DSL",
+    tenure: "18 months",
+    charges: "$54.20/mo",
+    notes: "Moderate tenure with one-year contract, but streaming add-ons unutilized.",
+    data: {
+      gender: "Male",
+      SeniorCitizen: 0,
+      Partner: "No",
+      Dependents: "No",
+      tenure: 18,
+      PhoneService: "Yes",
+      MultipleLines: "No",
+      InternetService: "DSL",
+      OnlineSecurity: "Yes",
+      OnlineBackup: "No",
+      DeviceProtection: "No",
+      TechSupport: "No",
+      StreamingTV: "No",
+      StreamingMovies: "No",
+      Contract: "One year",
+      PaperlessBilling: "No",
+      PaymentMethod: "Mailed check",
+      MonthlyCharges: 54.20,
+      TotalCharges: 975.60,
+    },
+  },
+  {
+    id: 4,
+    label: "Case 4 · Multi-Product Family",
+    category: "Medium Risk",
+    riskClass: "badge-medium",
+    prob: "41.6%",
+    contract: "Month-to-month",
+    internet: "DSL",
+    tenure: "24 months",
+    charges: "$68.90/mo",
+    notes: "Multiple lines and dependents; potential retention target for contract upgrade.",
+    data: {
+      gender: "Female",
+      SeniorCitizen: 0,
+      Partner: "Yes",
+      Dependents: "Yes",
+      tenure: 24,
+      PhoneService: "Yes",
+      MultipleLines: "Yes",
+      InternetService: "DSL",
+      OnlineSecurity: "Yes",
+      OnlineBackup: "Yes",
+      DeviceProtection: "Yes",
+      TechSupport: "No",
+      StreamingTV: "Yes",
+      StreamingMovies: "No",
+      Contract: "Month-to-month",
+      PaperlessBilling: "Yes",
+      PaymentMethod: "Bank transfer (automatic)",
+      MonthlyCharges: 68.90,
+      TotalCharges: 1653.60,
+    },
+  },
+  {
+    id: 5,
+    label: "Case 5 · Long-Tenure 2-Year Contract",
+    category: "Low Risk",
+    riskClass: "badge-low",
+    prob: "4.8%",
+    contract: "Two year",
+    internet: "Fiber optic",
+    tenure: "68 months",
+    charges: "$105.40/mo",
+    notes: "Highly sticky customer with all security services enabled and auto bank transfer.",
+    data: {
+      gender: "Female",
+      SeniorCitizen: 0,
+      Partner: "Yes",
+      Dependents: "Yes",
+      tenure: 68,
+      PhoneService: "Yes",
+      MultipleLines: "Yes",
+      InternetService: "Fiber optic",
+      OnlineSecurity: "Yes",
+      OnlineBackup: "Yes",
+      DeviceProtection: "Yes",
+      TechSupport: "Yes",
+      StreamingTV: "Yes",
+      StreamingMovies: "Yes",
+      Contract: "Two year",
+      PaperlessBilling: "No",
+      PaymentMethod: "Bank transfer (automatic)",
+      MonthlyCharges: 105.40,
+      TotalCharges: 7167.20,
+    },
+  },
+  {
+    id: 6,
+    label: "Case 6 · Loyal Phone-Only Senior",
+    category: "Low Risk",
+    riskClass: "badge-low",
+    prob: "2.1%",
+    contract: "Two year",
+    internet: "No",
+    tenure: "60 months",
+    charges: "$20.25/mo",
+    notes: "Low-maintenance phone service with consistent automatic credit card payments.",
+    data: {
+      gender: "Male",
+      SeniorCitizen: 1,
+      Partner: "Yes",
+      Dependents: "No",
+      tenure: 60,
+      PhoneService: "Yes",
+      MultipleLines: "No",
+      InternetService: "No",
+      OnlineSecurity: "No internet service",
+      OnlineBackup: "No internet service",
+      DeviceProtection: "No internet service",
+      TechSupport: "No internet service",
+      StreamingTV: "No internet service",
+      StreamingMovies: "No internet service",
+      Contract: "Two year",
+      PaperlessBilling: "No",
+      PaymentMethod: "Credit card (automatic)",
+      MonthlyCharges: 20.25,
+      TotalCharges: 1215.00,
+    },
   },
 ];
 
-const numericFields = [
-  { name: "tenure", label: "Tenure (Months)", min: 0, max: 72 },
-  { name: "MonthlyCharges", label: "Monthly Charges ($)", min: 0 },
-  { name: "TotalCharges", label: "Total Charges ($)", min: 0 },
-];
-
-const featureData = [
-  { name: "Tenure", value: 16.9 },
-  { name: "Total Charges", value: 14.3 },
-  { name: "Two Year Contract", value: 11.3 },
-  { name: "Monthly Charges", value: 9.8 },
-  { name: "Fiber Optic", value: 6.6 },
-  { name: "Electronic Check", value: 5.3 },
-];
-
-function App() {
-  const [form, setForm] = useState(initialForm);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState("");
+export default function App() {
+  /* ── State ── */
+  const [tab, setTab] = useState("predict");
+  const [formData, setFormData] = useState(DEFAULT_FORM);
+  const [predictionResult, setPredictionResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [logs, setLogs] = useState([
+    "[SYSTEM] ChurnPulse Random Forest Engine v1.0 ready.",
+    "[SYSTEM] Serialized objects loaded: encoder.pkl, scaler.pkl, customer_churn_model.pkl",
+  ]);
+  const [galleryFilter, setGalleryFilter] = useState("all");
+  const [modal, setModal] = useState(null);
+  const [toast, setToast] = useState({ show: false, msg: "", type: "success" });
 
-  const handleChange = (name, value) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
-    setResult(null);
-    setError("");
+  const logsRef = useRef(null);
+  const chartRef = useRef(null);
+  const chartInst = useRef(null);
+
+  /* ── Logs auto-scroll ── */
+  useEffect(() => {
+    if (logsRef.current) logsRef.current.scrollTop = logsRef.current.scrollHeight;
+  }, [logs]);
+
+  /* ── Chart.js ── */
+  useEffect(() => {
+    if (!chartRef.current) return;
+    if (chartInst.current) chartInst.current.destroy();
+
+    chartInst.current = new window.Chart(chartRef.current, {
+      type: "bar",
+      data: {
+        labels: ["Logistic Reg.", "Tuned Log. Reg.", "Tuned Random Forest"],
+        datasets: [
+          {
+            label: "Accuracy",
+            data: [0.807, 0.7424, 0.763],
+            backgroundColor: "rgba(13,148,136,.7)",
+            borderColor: "#0d9488",
+            borderWidth: 1,
+          },
+          {
+            label: "Churn Recall",
+            data: [0.56, 0.78, 0.79],
+            backgroundColor: "rgba(14,165,233,.7)",
+            borderColor: "#0ea5e9",
+            borderWidth: 1,
+          },
+          {
+            label: "Churn Precision",
+            data: [0.66, 0.51, 0.54],
+            backgroundColor: "rgba(16,185,129,.7)",
+            borderColor: "#10b981",
+            borderWidth: 1,
+          },
+          {
+            label: "F1-Score",
+            data: [0.61, 0.62, 0.64],
+            backgroundColor: "rgba(167,139,250,.7)",
+            borderColor: "#a78bfa",
+            borderWidth: 1,
+          },
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: "#94a3b8",
+              font: { family: "Inter, sans-serif", size: 11 },
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: "#94a3b8" },
+            grid: { color: "rgba(255,255,255,.03)" },
+          },
+          y: {
+            min: 0,
+            max: 1,
+            ticks: { color: "#94a3b8", stepSize: 0.2 },
+            grid: { color: "rgba(255,255,255,.03)" },
+          },
+        },
+      },
+    });
+  }, []);
+
+  /* ── Helpers ── */
+  const addLog = (msg, cls = "") => setLogs((p) => [...p, { msg, cls }]);
+  const showToast = (msg, type = "success") => {
+    setToast({ show: true, msg, type });
+    setTimeout(() => setToast((p) => ({ ...p, show: false })), 3500);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleInputChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]:
+        field === "SeniorCitizen" || field === "tenure"
+          ? parseInt(value) || 0
+          : field === "MonthlyCharges" || field === "TotalCharges"
+          ? parseFloat(value) || 0
+          : value,
+    }));
+  };
+
+  const applyPreset = (presetData) => {
+    setFormData({ ...presetData });
+    setPredictionResult(null);
+    addLog(`[ACTION] Applied preset: ${presetData.Contract} | ${presetData.InternetService}`, "log-info");
+    showToast("Preset profile loaded!", "success");
+  };
+
+  /* ── Prediction ── */
+  const runPrediction = async () => {
     setLoading(true);
     setError("");
-    setResult(null);
+    setProgress(0);
+    addLog("[INFO] Dispatching customer payload to Flask REST API...", "log-info");
 
-    const payload = {
-      ...form,
-      SeniorCitizen: Number(form.SeniorCitizen),
-      tenure: Number(form.tenure),
-      MonthlyCharges: Number(form.MonthlyCharges),
-      TotalCharges: Number(form.TotalCharges),
-    };
+    const iv = setInterval(() => {
+      setProgress((p) => Math.min(p + Math.random() * 15, 88));
+    }, 120);
 
     try {
-      const response = await fetch(API_URL, {
+      const res = await fetch(API_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Prediction failed.");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server responded with status ${res.status}`);
       }
 
-      setResult(data);
+      const result = await res.json();
+      setPredictionResult(result);
+      setProgress(100);
+
+      const logMsg = `[SUCCESS] Output received: ${result.result} (${result.churn_probability}%)`;
+      addLog(logMsg, result.prediction === 1 ? "log-warn" : "log-success");
+      showToast(`Prediction: ${result.result} (${result.churn_probability}%)`, "success");
     } catch (err) {
-      setError(
-        err.message.includes("Failed to fetch")
-          ? "Cannot connect to Flask server. Please check whether the backend is running."
-          : err.message
-      );
+      const msg = err.message.includes("fetch")
+        ? "Cannot connect to Flask backend. Is 'python app.py' running on port 5000?"
+        : err.message;
+      setError(msg);
+      addLog(`[ERROR] ${msg}`, "log-warn");
+      showToast("Prediction failed", "error");
     } finally {
+      clearInterval(iv);
       setLoading(false);
+      setTimeout(() => setProgress(0), 1000);
     }
   };
 
-  const resetForm = () => {
-    setForm(initialForm);
-    setResult(null);
-    setError("");
-  };
+  /* ── Filter Cohorts ── */
+  const cohortItems =
+    galleryFilter === "all"
+      ? COHORT_SAMPLES
+      : COHORT_SAMPLES.filter((s) => s.category.toLowerCase().includes(galleryFilter.toLowerCase()));
 
-  const isChurn = result?.result === "Churn";
-
+  /* ── Render ── */
   return (
-    <div className="min-h-screen bg-[#09090f] text-slate-100">
+    <>
+      <div className="grid-mesh" />
+      <div className="glow-blob blob-top" />
+      <div className="glow-blob blob-bottom" />
 
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 hidden h-screen w-64 border-r border-white/10 bg-[#101019] p-6 lg:block">
-        <div className="flex items-center gap-3 mb-12">
-          <div className="rounded-xl bg-blue-600 p-3">
-            <BrainCircuit size={25} />
+      {/* ── Navbar ── */}
+      <nav className="navbar">
+        <div className="navbar-container">
+          <a href="#" className="navbar-logo">
+            <div className="logo-icon">
+              <i className="fas fa-chart-line" />
+            </div>
+            <span className="logo-name">ChurnPulse</span>
+          </a>
+          <ul className="navbar-menu">
+            <li><a href="#features" className="navbar-link">Capabilities</a></li>
+            <li><a href="#demo" className="navbar-link">Live Console</a></li>
+            <li><a href="#cohorts" className="navbar-link">Customer Cohorts</a></li>
+            <li><a href="#metrics" className="navbar-link">Model Telemetry</a></li>
+            <li><a href="#faq" className="navbar-link">FAQ</a></li>
+          </ul>
+          <a href="#demo" className="btn btn-primary btn-sm">
+            <i className="fas fa-play" /> Run Predictor
+          </a>
+        </div>
+      </nav>
+
+      <div className="app-wrap">
+        {/* ── Hero ── */}
+        <section className="hero">
+          <div className="hero-badge">
+            <span className="hero-badge-dot" />
+            <span>Random Forest Active · 79% Churn Recall · F1 0.64</span>
           </div>
-          <div>
-            <h1 className="text-lg font-bold">ChurnAI</h1>
-            <p className="text-xs text-slate-500">Prediction Platform</p>
-          </div>
-        </div>
-
-        <p className="mb-4 text-xs uppercase tracking-widest text-slate-500">
-          Workspace
-        </p>
-
-        <div className="flex items-center gap-3 rounded-xl bg-blue-600/15 px-4 py-3 text-blue-400">
-          <Activity size={19} />
-          <span className="font-medium">Dashboard</span>
-        </div>
-
-        <div className="mt-4 flex items-center gap-3 px-4 py-3 text-slate-400">
-          <Users size={19} />
-          Customer Analysis
-        </div>
-
-        <div className="mt-4 flex items-center gap-3 px-4 py-3 text-slate-400">
-          <TrendingUp size={19} />
-          Model Insights
-        </div>
-
-        <div className="absolute bottom-8 left-6 right-6 rounded-xl border border-white/10 bg-white/5 p-4">
-          <div className="flex items-center gap-2 text-sm text-emerald-400">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            ML Model Ready
-          </div>
-          <p className="mt-2 text-xs text-slate-500">
-            Tuned Random Forest
+          <h1 className="hero-title">
+            Predicting Customer Churn<br />Before It Happens, Instantly
+          </h1>
+          <p className="hero-desc">
+            An intelligent customer retention platform powered by a tuned Random Forest classifier trained on 7,043 telecom accounts. Evaluate contract types, service bundles, and billing profiles to identify churn risk in real time.
           </p>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="p-5 sm:p-8 lg:ml-64 lg:p-10">
-
-        {/* Header */}
-        <header className="mb-9 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="mb-2 text-sm text-slate-500">
-              Workspace / Overview
-            </p>
-            <h2 className="text-3xl font-bold tracking-tight">
-              Customer Dashboard
-            </h2>
-            <p className="mt-2 text-sm text-slate-400">
-              Predict customer churn using machine learning.
-            </p>
+          <div className="hero-ctas">
+            <a href="#demo" className="btn btn-primary">
+              <i className="fas fa-terminal" /> Launch Prediction Console
+            </a>
+            <a href="#cohorts" className="btn btn-secondary">
+              <i className="fas fa-users" /> Explore Customer Cohorts
+            </a>
           </div>
-
-          <div className="flex items-center gap-4">
-            <button className="rounded-xl border border-white/10 p-3 text-slate-400">
-              <Bell size={19} />
-            </button>
-            <div className="flex items-center gap-3 rounded-xl border border-white/10 p-2">
-              <div className="rounded-lg bg-blue-600/20 p-2 text-blue-400">
-                <UserRound size={19} />
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-sm font-medium">Admin</p>
-                <p className="text-xs text-slate-500">ML Dashboard</p>
-              </div>
-              <ChevronDown size={16} className="text-slate-500" />
-            </div>
-          </div>
-        </header>
-
-        {/* Statistics */}
-        <section className="mb-9 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-
-          {[
-            {
-              title: "Model Accuracy",
-              value: "76.30%",
-              icon: ShieldCheck,
-              color: "text-blue-400",
-            },
-            {
-              title: "Churn Recall",
-              value: "79%",
-              icon: TrendingUp,
-              color: "text-purple-400",
-            },
-            {
-              title: "Churn Precision",
-              value: "54%",
-              icon: Users,
-              color: "text-orange-400",
-            },
-            {
-              title: "Churn F1 Score",
-              value: "64%",
-              icon: Zap,
-              color: "text-emerald-400",
-            },
-          ].map((item) => (
-            <div
-              key={item.title}
-              className="rounded-2xl border border-white/10 bg-[#12121d] p-5"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-slate-400">{item.title}</p>
-                <item.icon className={item.color} size={21} />
-              </div>
-              <h3 className="mt-4 text-3xl font-bold">{item.value}</h3>
-              <p className="mt-2 text-xs text-slate-500">
-                Tuned Random Forest
-              </p>
-            </div>
-          ))}
-
         </section>
 
-        {/* Prediction Form */}
-        <section className="grid gap-6 xl:grid-cols-3">
-
-          <div className="rounded-2xl border border-white/10 bg-[#12121d] p-6 xl:col-span-2">
-
-            <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="text-xl font-bold">Customer Information</h3>
-                <p className="mt-1 text-sm text-slate-400">
-                  Enter customer details to predict churn.
-                </p>
+        {/* ── Features ── */}
+        <section className="section-container" id="features">
+          <div className="section-header">
+            <span className="section-tag">System Features</span>
+            <h2 className="section-title">Platform Capabilities</h2>
+          </div>
+          <div className="features-grid">
+            {[
+              {
+                icon: "fa-sliders-h",
+                name: "Real-Time Risk Scoring",
+                desc: "Send 19 demographic, account, and service parameters to the Flask REST inference engine and receive real-time churn probability and risk tier classification in milliseconds.",
+              },
+              {
+                icon: "fa-shield-alt",
+                name: "Leak-Free Preprocessing",
+                desc: "Preprocessed with Scikit-learn OneHotEncoder and StandardScaler fit exclusively on training data, preventing data leakage and guaranteeing deployment fidelity.",
+              },
+              {
+                icon: "fa-bullseye",
+                name: "Recall-Optimized Classification",
+                desc: "Engineered with balanced class weights to maximize customer churn detection (79% recall), reducing false negatives and protecting valuable customer lifetime value.",
+              },
+            ].map((f) => (
+              <div className="feature-card" key={f.name}>
+                <div className="feature-icon">
+                  <i className={`fas ${f.icon}`} />
+                </div>
+                <h4 className="feature-name">{f.name}</h4>
+                <p className="feature-desc">{f.desc}</p>
               </div>
-              <span className="rounded-lg bg-blue-500/10 px-3 py-2 text-xs text-blue-400">
-                19 Features
-              </span>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Demo Console ── */}
+        <section className="section-container" id="demo">
+          <div className="section-header">
+            <span className="section-tag">Interactive Environment</span>
+            <h2 className="section-title">Customer Churn Prediction Console</h2>
+          </div>
+
+          <div className="demo-panel">
+            <div className="demo-tabs-bar">
+              <button
+                className={`demo-tab-btn ${tab === "predict" ? "active" : ""}`}
+                onClick={() => setTab("predict")}
+              >
+                <i className="fas fa-user-check" /> Account Attributes &amp; Scoring
+              </button>
+              <button
+                className={`demo-tab-btn ${tab === "pipeline" ? "active" : ""}`}
+                onClick={() => setTab("pipeline")}
+              >
+                <i className="fas fa-route" /> ML Pipeline Architecture
+              </button>
             </div>
 
-            <form onSubmit={handleSubmit}>
+            <div className="demo-pane-body">
+              {tab === "predict" && (
+                <div className="workspace-grid">
+                  {/* Left Column: Input Form */}
+                  <div className="workspace-card">
+                    <div className="workspace-card-title">
+                      <i className="fas fa-sliders-h" /> Customer Account Profile
+                    </div>
 
-              {fields.map((section) => (
-                <div key={section.title} className="mb-8">
-                  <div className="mb-5 flex items-center gap-2 border-b border-white/10 pb-3">
-                    <section.icon size={19} className="text-blue-400" />
-                    <h4 className="font-semibold">{section.title}</h4>
+                    {/* Presets */}
+                    <div className="presets-bar">
+                      <span className="presets-label"><i className="fas fa-bolt" /> Presets:</span>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => applyPreset(COHORT_SAMPLES[0].data)}
+                      >
+                        High Risk
+                      </button>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => applyPreset(COHORT_SAMPLES[2].data)}
+                      >
+                        Medium Risk
+                      </button>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => applyPreset(COHORT_SAMPLES[4].data)}
+                      >
+                        Low Risk
+                      </button>
+                    </div>
+
+                    {/* Section 1: Demographics */}
+                    <div className="form-section-title">
+                      <i className="fas fa-user" /> Demographics &amp; Tenure
+                    </div>
+                    <div className="form-grid-3">
+                      <div className="form-field">
+                        <label className="form-label">Gender</label>
+                        <select
+                          className="form-select"
+                          value={formData.gender}
+                          onChange={(e) => handleInputChange("gender", e.target.value)}
+                        >
+                          <option value="Female">Female</option>
+                          <option value="Male">Male</option>
+                        </select>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Senior Citizen</label>
+                        <select
+                          className="form-select"
+                          value={formData.SeniorCitizen}
+                          onChange={(e) => handleInputChange("SeniorCitizen", e.target.value)}
+                        >
+                          <option value={0}>No (0)</option>
+                          <option value={1}>Yes (1)</option>
+                        </select>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Partner</label>
+                        <select
+                          className="form-select"
+                          value={formData.Partner}
+                          onChange={(e) => handleInputChange("Partner", e.target.value)}
+                        >
+                          <option value="Yes">Yes</option>
+                          <option value="No">No</option>
+                        </select>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Dependents</label>
+                        <select
+                          className="form-select"
+                          value={formData.Dependents}
+                          onChange={(e) => handleInputChange("Dependents", e.target.value)}
+                        >
+                          <option value="No">No</option>
+                          <option value="Yes">Yes</option>
+                        </select>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Tenure (Months)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="72"
+                          className="form-input"
+                          value={formData.tenure}
+                          onChange={(e) => handleInputChange("tenure", e.target.value)}
+                        />
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Phone Service</label>
+                        <select
+                          className="form-select"
+                          value={formData.PhoneService}
+                          onChange={(e) => handleInputChange("PhoneService", e.target.value)}
+                        >
+                          <option value="Yes">Yes</option>
+                          <option value="No">No</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Section 2: Services */}
+                    <div className="form-section-title">
+                      <i className="fas fa-wifi" /> Internet &amp; Value-Added Services
+                    </div>
+                    <div className="form-grid-3">
+                      <div className="form-field">
+                        <label className="form-label">Internet Service</label>
+                        <select
+                          className="form-select"
+                          value={formData.InternetService}
+                          onChange={(e) => handleInputChange("InternetService", e.target.value)}
+                        >
+                          <option value="Fiber optic">Fiber optic</option>
+                          <option value="DSL">DSL</option>
+                          <option value="No">No</option>
+                        </select>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Multiple Lines</label>
+                        <select
+                          className="form-select"
+                          value={formData.MultipleLines}
+                          onChange={(e) => handleInputChange("MultipleLines", e.target.value)}
+                        >
+                          <option value="No">No</option>
+                          <option value="Yes">Yes</option>
+                          <option value="No phone service">No phone service</option>
+                        </select>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Online Security</label>
+                        <select
+                          className="form-select"
+                          value={formData.OnlineSecurity}
+                          onChange={(e) => handleInputChange("OnlineSecurity", e.target.value)}
+                        >
+                          <option value="No">No</option>
+                          <option value="Yes">Yes</option>
+                          <option value="No internet service">No internet service</option>
+                        </select>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Online Backup</label>
+                        <select
+                          className="form-select"
+                          value={formData.OnlineBackup}
+                          onChange={(e) => handleInputChange("OnlineBackup", e.target.value)}
+                        >
+                          <option value="No">No</option>
+                          <option value="Yes">Yes</option>
+                          <option value="No internet service">No internet service</option>
+                        </select>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Device Protection</label>
+                        <select
+                          className="form-select"
+                          value={formData.DeviceProtection}
+                          onChange={(e) => handleInputChange("DeviceProtection", e.target.value)}
+                        >
+                          <option value="No">No</option>
+                          <option value="Yes">Yes</option>
+                          <option value="No internet service">No internet service</option>
+                        </select>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Tech Support</label>
+                        <select
+                          className="form-select"
+                          value={formData.TechSupport}
+                          onChange={(e) => handleInputChange("TechSupport", e.target.value)}
+                        >
+                          <option value="No">No</option>
+                          <option value="Yes">Yes</option>
+                          <option value="No internet service">No internet service</option>
+                        </select>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Streaming TV</label>
+                        <select
+                          className="form-select"
+                          value={formData.StreamingTV}
+                          onChange={(e) => handleInputChange("StreamingTV", e.target.value)}
+                        >
+                          <option value="No">No</option>
+                          <option value="Yes">Yes</option>
+                          <option value="No internet service">No internet service</option>
+                        </select>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Streaming Movies</label>
+                        <select
+                          className="form-select"
+                          value={formData.StreamingMovies}
+                          onChange={(e) => handleInputChange("StreamingMovies", e.target.value)}
+                        >
+                          <option value="No">No</option>
+                          <option value="Yes">Yes</option>
+                          <option value="No internet service">No internet service</option>
+                        </select>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Contract Type</label>
+                        <select
+                          className="form-select"
+                          value={formData.Contract}
+                          onChange={(e) => handleInputChange("Contract", e.target.value)}
+                        >
+                          <option value="Month-to-month">Month-to-month</option>
+                          <option value="One year">One year</option>
+                          <option value="Two year">Two year</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Section 3: Billing */}
+                    <div className="form-section-title">
+                      <i className="fas fa-credit-card" /> Billing &amp; Payment
+                    </div>
+                    <div className="form-grid-2">
+                      <div className="form-field">
+                        <label className="form-label">Paperless Billing</label>
+                        <select
+                          className="form-select"
+                          value={formData.PaperlessBilling}
+                          onChange={(e) => handleInputChange("PaperlessBilling", e.target.value)}
+                        >
+                          <option value="Yes">Yes</option>
+                          <option value="No">No</option>
+                        </select>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Payment Method</label>
+                        <select
+                          className="form-select"
+                          value={formData.PaymentMethod}
+                          onChange={(e) => handleInputChange("PaymentMethod", e.target.value)}
+                        >
+                          <option value="Electronic check">Electronic check</option>
+                          <option value="Mailed check">Mailed check</option>
+                          <option value="Bank transfer (automatic)">Bank transfer (automatic)</option>
+                          <option value="Credit card (automatic)">Credit card (automatic)</option>
+                        </select>
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Monthly Charges ($)</label>
+                        <input
+                          type="number"
+                          step="0.05"
+                          className="form-input"
+                          value={formData.MonthlyCharges}
+                          onChange={(e) => handleInputChange("MonthlyCharges", e.target.value)}
+                        />
+                      </div>
+
+                      <div className="form-field">
+                        <label className="form-label">Total Charges ($)</label>
+                        <input
+                          type="number"
+                          step="0.05"
+                          className="form-input"
+                          value={formData.TotalCharges}
+                          onChange={(e) => handleInputChange("TotalCharges", e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      className="btn btn-primary"
+                      onClick={runPrediction}
+                      disabled={loading}
+                      style={{ width: "100%", marginTop: ".5rem" }}
+                    >
+                      {loading ? (
+                        <>
+                          <i className="fas fa-spinner fa-spin" /> Evaluating Churn Risk...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-bolt" /> Predict Customer Churn
+                        </>
+                      )}
+                    </button>
+
+                    {error && (
+                      <div className="error-bar">
+                        <i className="fas fa-exclamation-circle" /> {error}
+                      </div>
+                    )}
+
+                    {/* Console Logs */}
+                    <div>
+                      <div className="console-header-bar">
+                        <span className="console-tab-tag">
+                          <i className="fas fa-terminal" /> Inference Telemetry &amp; Logs
+                        </span>
+                        <span style={{ fontSize: ".65rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+                          STDOUT
+                        </span>
+                      </div>
+                      <div className="logs-box" ref={logsRef}>
+                        {logs.map((l, i) => (
+                          <div key={i} className={typeof l === "object" ? l.cls : ""}>
+                            {typeof l === "object" ? l.msg : l}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    {section.items.map((field) => (
-                      <div key={field.name}>
-                        <label className="mb-2 block text-sm text-slate-400">
-                          {field.label}
-                        </label>
-                        <select
-                          value={form[field.name]}
-                          onChange={(e) =>
-                            handleChange(field.name, e.target.value)
-                          }
-                          className="w-full rounded-xl border border-white/10 bg-[#1b1b29] px-4 py-3 text-sm outline-none transition focus:border-blue-500"
+                  {/* Right Column: Output */}
+                  <div className="workspace-card">
+                    <div className="workspace-card-title">
+                      <i className="fas fa-tachometer-alt" /> Model Decision &amp; Scoring
+                    </div>
+
+                    {predictionResult && (
+                      <div className="success-bar">
+                        <span>
+                          <i className="fas fa-check-circle" /> Inference complete via Random Forest
+                        </span>
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: ".75rem" }}>
+                          HTTP 200 OK
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="output-card-box">
+                      {predictionResult ? (
+                        <>
+                          <span
+                            className={`risk-tag ${
+                              predictionResult.churn_probability >= 70
+                                ? "risk-high"
+                                : predictionResult.churn_probability >= 40
+                                ? "risk-medium"
+                                : "risk-low"
+                            }`}
+                          >
+                            <i
+                              className={`fas ${
+                                predictionResult.prediction === 1
+                                  ? "fa-user-times"
+                                  : "fa-user-check"
+                              }`}
+                            />
+                            {predictionResult.prediction === 1 ? "High Churn Risk" : "Likely Retained"}
+                          </span>
+
+                          <div
+                            className="prob-score-huge"
+                            style={{
+                              color:
+                                predictionResult.churn_probability >= 70
+                                  ? "var(--danger)"
+                                  : predictionResult.churn_probability >= 40
+                                  ? "var(--warning)"
+                                  : "var(--success)",
+                            }}
+                          >
+                            {predictionResult.churn_probability}%
+                          </div>
+
+                          <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>
+                            Predicted Churn Probability
+                          </span>
+
+                          <div className="prob-meter-bar">
+                            <div
+                              className="prob-meter-fill"
+                              style={{
+                                width: `${predictionResult.churn_probability}%`,
+                                background:
+                                  predictionResult.churn_probability >= 70
+                                    ? "var(--danger)"
+                                    : predictionResult.churn_probability >= 40
+                                    ? "var(--warning)"
+                                    : "var(--success)",
+                              }}
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ padding: "3rem 1rem", color: "var(--text-muted)" }}>
+                          <i className="fas fa-chart-pie" style={{ fontSize: "2.5rem", marginBottom: "1rem", display: "block" }} />
+                          <p style={{ fontSize: ".85rem" }}>
+                            Configure customer profile attributes and click <strong>Predict Customer Churn</strong> to view real-time score.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {loading && (
+                      <div>
+                        <div
+                          style={{
+                            fontSize: ".7rem",
+                            color: "var(--text-muted)",
+                            fontFamily: "var(--font-display)",
+                            marginBottom: ".35rem",
+                          }}
                         >
-                          {field.options.map((option) => (
-                            <option key={option} value={option}>
-                              {field.name === "SeniorCitizen"
-                                ? option === "1" ? "Yes" : "No"
-                                : option}
-                            </option>
-                          ))}
-                        </select>
+                          Processing feature transformations &amp; tree votes...
+                        </div>
+                        <div className="progress-meter">
+                          <div className="progress-fill" style={{ width: `${progress}%` }} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Insight Cards */}
+                    <div className="insight-grid">
+                      <div className="insight-card">
+                        <div className="insight-title">Contract Factor</div>
+                        <div className="insight-val">{formData.Contract}</div>
+                      </div>
+                      <div className="insight-card">
+                        <div className="insight-title">Monthly Commitment</div>
+                        <div className="insight-val">${formData.MonthlyCharges}/mo</div>
+                      </div>
+                      <div className="insight-card">
+                        <div className="insight-title">Customer Tenure</div>
+                        <div className="insight-val">{formData.tenure} Months</div>
+                      </div>
+                      <div className="insight-card">
+                        <div className="insight-title">Internet Type</div>
+                        <div className="insight-val">{formData.InternetService}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 2: ML Pipeline */}
+              {tab === "pipeline" && (
+                <div className="workspace-grid">
+                  <div className="workspace-card">
+                    <div className="workspace-card-title">
+                      <i className="fas fa-route" /> Inference Dataflow
+                    </div>
+                    {[
+                      ["Input JSON Payload", "19 raw features validated against expected schema."],
+                      ["One-Hot Encoding", "16 categorical features encoded via encoder.pkl (drop='first', handle_unknown='ignore')."],
+                      ["Standard Scaling", "Numerical features (tenure, MonthlyCharges, TotalCharges) scaled via scaler.pkl."],
+                      ["Feature Reindexing", "Exact column ordering alignment against model.feature_names_in_."],
+                      ["Random Forest Scoring", "200 decision trees compute class votes with balanced weighting."],
+                      ["Risk Classification", "Returns binary classification (0/1), class label, and calibrated percentage probability."],
+                    ].map(([step, desc], i) => (
+                      <div className="pipeline-step" key={i}>
+                        <div className="step-num">{i + 1}</div>
+                        <div>
+                          <strong style={{ color: "#fff" }}>{step}</strong> — {desc}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="workspace-card">
+                    <div className="workspace-card-title">
+                      <i className="fas fa-code-branch" /> API Endpoints
+                    </div>
+                    {[
+                      {
+                        method: "GET",
+                        cls: "method-get",
+                        path: "/",
+                        desc: "Health check verifying Flask API is up and operational.",
+                      },
+                      {
+                        method: "POST",
+                        cls: "method-post",
+                        path: "/predict",
+                        desc: "Accepts JSON payload with 19 customer features → returns churn label & probability.",
+                      },
+                    ].map((ep) => (
+                      <div className="api-card" key={ep.path} style={{ marginBottom: ".65rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: ".65rem" }}>
+                          <span className={`method-badge ${ep.cls}`}>{ep.method}</span>
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: ".8rem", color: "#fff" }}>
+                            {ep.path}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: ".75rem", color: "var(--text-secondary)", marginTop: ".35rem" }}>
+                          {ep.desc}
+                        </p>
                       </div>
                     ))}
                   </div>
                 </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Customer Cohorts ── */}
+        <section className="section-container" id="cohorts">
+          <div className="section-header">
+            <span className="section-tag">Sample Profiles</span>
+            <h2 className="section-title">Customer Cohort Samples</h2>
+            <p className="section-desc">
+              Explore prototypical customer profiles across risk tiers. Click any profile to inspect full details or load it into the prediction console.
+            </p>
+          </div>
+
+          <div className="gallery-filter-row">
+            <div className="filter-chips">
+              {["all", "High Risk", "Medium Risk", "Low Risk"].map((f) => (
+                <span
+                  key={f}
+                  className={`filter-chip ${galleryFilter === f ? "active" : ""}`}
+                  onClick={() => setGalleryFilter(f)}
+                >
+                  {f === "all" ? "All Cohorts" : f}
+                </span>
               ))}
+            </div>
+          </div>
 
-              <div className="mb-8">
-                <div className="mb-5 flex items-center gap-2 border-b border-white/10 pb-3">
-                  <CreditCard size={19} className="text-blue-400" />
-                  <h4 className="font-semibold">Financial & Tenure Details</h4>
+          <div className="gallery-grid">
+            {cohortItems.map((s) => (
+              <div
+                className="gallery-card"
+                key={s.id}
+                onClick={() => setModal(s)}
+              >
+                <div className="gallery-card-header">
+                  <span className={`gallery-badge ${s.riskClass}`}>{s.category}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: ".85rem", fontWeight: 700, color: "#fff" }}>
+                    {s.prob} Churn
+                  </span>
                 </div>
+                <div className="gallery-card-body">
+                  <div className="gallery-card-label">{s.label}</div>
+                  <div className="gallery-card-row">
+                    <span>Contract:</span>
+                    <span style={{ color: "#fff" }}>{s.contract}</span>
+                  </div>
+                  <div className="gallery-card-row">
+                    <span>Internet:</span>
+                    <span style={{ color: "#fff" }}>{s.internet}</span>
+                  </div>
+                  <div className="gallery-card-row">
+                    <span>Tenure:</span>
+                    <span style={{ color: "#fff" }}>{s.tenure}</span>
+                  </div>
+                  <div className="gallery-card-row">
+                    <span>Monthly Spend:</span>
+                    <span style={{ color: "#fff" }}>{s.charges}</span>
+                  </div>
+                  <div className="gallery-card-cta">Click to inspect &amp; test profile →</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-                <div className="grid gap-5 sm:grid-cols-2">
-                  {numericFields.map((field) => (
-                    <div key={field.name}>
-                      <label className="mb-2 block text-sm text-slate-400">
-                        {field.label}
-                      </label>
-                      <input
-                        type="number"
-                        min={field.min}
-                        max={field.max}
-                        step={field.name === "tenure" ? "1" : "0.01"}
-                        required
-                        value={form[field.name]}
-                        onChange={(e) =>
-                          handleChange(field.name, e.target.value)
-                        }
-                        className="w-full rounded-xl border border-white/10 bg-[#1b1b29] px-4 py-3 text-sm outline-none transition focus:border-blue-500"
-                      />
+        {/* ── ML Metrics & Telemetry ── */}
+        <section className="section-container" id="metrics">
+          <div className="section-header">
+            <span className="section-tag">Model Diagnostics</span>
+            <h2 className="section-title">Random Forest Classifier Telemetry</h2>
+            <p className="section-desc">
+              Model specifications, hyperparameter configuration, and test-set performance metrics for the ChurnPulse engine.
+            </p>
+          </div>
+
+          <div className="telemetry-layout">
+            <div className="specs-column">
+              {/* Specs */}
+              <div className="spec-card">
+                <div className="spec-card-header">
+                  <i className="fas fa-microchip spec-icon" />
+                  <span className="spec-title">Algorithm Specifications</span>
+                </div>
+                <div className="spec-list">
+                  {[
+                    ["Algorithm", "RandomForestClassifier"],
+                    ["Estimators (Trees)", "200"],
+                    ["Max Depth", "10"],
+                    ["Min Samples Leaf", "2"],
+                    ["Class Weight", "balanced"],
+                    ["Validation Set Size", "1,409 (20% holdout)"],
+                    ["Total Dataset Records", "7,043 customers"],
+                    ["Inference Latency", "< 30ms"],
+                  ].map(([l, v]) => (
+                    <div className="spec-row" key={l}>
+                      <span className="spec-label">{l}</span>
+                      <span className="spec-value">{v}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {error && (
-                <div className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
-                  <AlertTriangle className="mr-2 inline" size={17} />
-                  {error}
+              {/* Progress bars */}
+              <div className="spec-card">
+                <div className="spec-card-header">
+                  <i className="fas fa-chart-bar spec-icon" />
+                  <span className="spec-title">Tuned Random Forest Metrics</span>
                 </div>
-              )}
-
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-4 font-semibold transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="animate-spin" size={19} />
-                      Predicting...
-                    </>
-                  ) : (
-                    <>
-                      <Search size={19} />
-                      Predict Customer Churn
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="rounded-xl border border-white/10 px-6 py-4 text-slate-300 transition hover:bg-white/5"
-                >
-                  Reset
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {/* Prediction Result */}
-          <div className="flex flex-col gap-6">
-
-            <div className="rounded-2xl border border-white/10 bg-[#12121d] p-6">
-              <h3 className="text-lg font-bold">Prediction Result</h3>
-              <p className="mt-1 text-sm text-slate-400">
-                Machine learning analysis
-              </p>
-
-              {!result && (
-                <div className="py-12 text-center">
-                  <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400">
-                    <BrainCircuit size={38} />
-                  </div>
-                  <h4 className="font-semibold">Awaiting Prediction</h4>
-                  <p className="mt-2 text-sm text-slate-500">
-                    Fill in the customer details and click predict.
-                  </p>
-                </div>
-              )}
-
-              {result && (
-                <div className="py-8 text-center">
-                  <div className={`mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full ${
-                    isChurn
-                      ? "bg-red-500/10 text-red-400"
-                      : "bg-emerald-500/10 text-emerald-400"
-                  }`}>
-                    {isChurn
-                      ? <AlertTriangle size={38} />
-                      : <CheckCircle2 size={38} />
-                    }
-                  </div>
-
-                  <p className="text-sm text-slate-400">
-                    Prediction Status
-                  </p>
-                  <h3 className={`mt-2 text-3xl font-bold ${
-                    isChurn ? "text-red-400" : "text-emerald-400"
-                  }`}>
-                    {result.result}
-                  </h3>
-
-                  <div className="mt-8 rounded-xl bg-white/5 p-5">
-                    <p className="text-sm text-slate-400">
-                      Churn Probability
-                    </p>
-                    <h2 className="mt-2 text-4xl font-bold">
-                      {Number(result.churn_probability).toFixed(2)}%
-                    </h2>
-                    <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
-                      <div
-                        className={`h-full rounded-full ${
-                          isChurn ? "bg-red-500" : "bg-emerald-500"
-                        }`}
-                        style={{
-                          width: `${Math.min(100, Math.max(0, Number(result.churn_probability)))}%`,
-                        }}
-                      />
+                <div className="bar-list">
+                  {[
+                    { label: "Churn Recall (Sensitivity)", val: "0.79", pct: "79%", cls: "fill-teal", color: "var(--accent-teal)" },
+                    { label: "Accuracy", val: "0.7630", pct: "76.3%", cls: "fill-sky", color: "var(--accent-sky)" },
+                    { label: "F1-Score (Churn)", val: "0.64", pct: "64%", cls: "fill-green", color: "var(--success)" },
+                    { label: "Precision (Churn)", val: "0.54", pct: "54%", cls: "fill-teal", color: "#fff" },
+                  ].map((b) => (
+                    <div className="bar-item" key={b.label}>
+                      <div className="bar-label-row">
+                        <span>{b.label}</span>
+                        <span style={{ color: b.color, fontFamily: "var(--font-mono)" }}>{b.val}</span>
+                      </div>
+                      <div className="bar-track">
+                        <div className={`bar-fill ${b.cls}`} style={{ width: b.pct }} />
+                      </div>
                     </div>
-                  </div>
-
-                  <p className="mt-5 text-xs text-slate-500">
-                    Prediction generated by Tuned Random Forest.
-                  </p>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* Feature Importance */}
-            <div className="rounded-2xl border border-white/10 bg-[#12121d] p-6">
-              <h3 className="text-lg font-bold">Top Features</h3>
-              <p className="mt-1 text-sm text-slate-400">
-                Model feature importance
-              </p>
+            {/* Chart */}
+            <div className="chart-card">
+              <div className="chart-header">
+                <div>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: ".95rem", color: "#fff" }}>
+                    Algorithm Benchmark
+                  </div>
+                  <div style={{ fontSize: ".75rem", color: "var(--text-secondary)", marginTop: ".2rem" }}>
+                    Logistic Regression vs. Tuned LR vs. Tuned Random Forest
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                  <span className="status-dot" />
+                  <span style={{ fontSize: ".7rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}>
+                    Holdout Test
+                  </span>
+                </div>
+              </div>
 
-              <div className="mt-7 space-y-5">
-                {featureData.map((feature) => (
-                  <div key={feature.name}>
-                    <div className="mb-2 flex justify-between text-xs">
-                      <span className="text-slate-300">{feature.name}</span>
-                      <span className="text-slate-400">
-                        {feature.value}%
-                      </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-white/5">
-                      <div
-                        className="h-2 rounded-full bg-blue-500"
-                        style={{ width: `${feature.value / 16.9 * 100}%` }}
-                      />
-                    </div>
+              <div className="chart-canvas-wrap">
+                <canvas ref={chartRef} />
+              </div>
+
+              <div className="metric-mini-cards">
+                {[
+                  { val: "76.3%", label: "Accuracy", color: "var(--accent-teal)" },
+                  { val: "79.0%", label: "Churn Recall", color: "var(--accent-sky)" },
+                  { val: "0.64", label: "F1-Score", color: "var(--success)" },
+                  { val: "200", label: "Trees", color: "#a78bfa" },
+                ].map((m) => (
+                  <div className="metric-mini" key={m.label}>
+                    <div className="metric-mini-val" style={{ color: m.color }}>{m.val}</div>
+                    <div className="metric-mini-label">{m.label}</div>
                   </div>
                 ))}
               </div>
-
-              <p className="mt-6 text-xs text-slate-500">
-                Based on the trained Random Forest model.
-              </p>
             </div>
-
           </div>
         </section>
 
-        <footer className="mt-10 border-t border-white/10 pt-6 text-center text-xs text-slate-500">
-          Customer Churn Prediction Platform · Powered by Machine Learning
-        </footer>
+        {/* ── FAQ ── */}
+        <section className="section-container" id="faq">
+          <div className="section-header">
+            <span className="section-tag">Help Center</span>
+            <h2 className="section-title">Frequently Asked Questions</h2>
+          </div>
+          <div className="faq-list">
+            {[
+              [
+                "Why is Random Forest tuned for Recall rather than raw Accuracy?",
+                "In subscription business models, failing to detect a churner (false negative) costs significant customer lifetime value. Achieving 79% recall ensures retention teams identify almost 8 out of 10 departing customers early.",
+              ],
+              [
+                "How does the model handle categorical features?",
+                "Categorical variables (e.g., Contract type, Internet service, Payment method) are transformed using OneHotEncoder with drop='first' and handle_unknown='ignore' to prevent multicollinearity and production errors.",
+              ],
+              [
+                "How do I run the backend API locally?",
+                "In the backend folder, run: 'pip install -r requirements.txt' followed by 'python app.py'. The API will start on port 5000.",
+              ],
+              [
+                "What dataset was used for training?",
+                "The system was trained and evaluated on the Telco Customer Churn dataset comprising 7,043 customer accounts with demographic, service, and contract attributes.",
+              ],
+              [
+                "Can new customer features be added to the inference pipeline?",
+                "Yes. By retraining the pipeline in the Jupyter notebook (notebooks/01_data_exploration.ipynb) and saving the resulting encoder, scaler, and model pickle files, the Flask API automatically synchronizes with new features.",
+              ],
+            ].map(([q, a]) => (
+              <details className="faq-item" key={q}>
+                <summary className="faq-summary">{q}</summary>
+                <div className="faq-body">{a}</div>
+              </details>
+            ))}
+          </div>
+        </section>
 
-      </main>
-    </div>
+        {/* ── Footer ── */}
+        <footer className="footer">
+          <div className="footer-grid">
+            <div className="footer-col">
+              <div style={{ display: "flex", alignItems: "center", gap: ".65rem", marginBottom: "1rem" }}>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    background: "linear-gradient(135deg,#0d9488,#0ea5e9)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#fff",
+                    fontSize: "1rem",
+                  }}
+                >
+                  <i className="fas fa-chart-line" />
+                </div>
+                <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "1.2rem", color: "#fff" }}>
+                  ChurnPulse
+                </span>
+              </div>
+              <p className="footer-desc">
+                Machine learning-powered customer churn prediction engine built with Scikit-learn, Flask, and React 19.
+              </p>
+              <div className="footer-socials">
+                <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="footer-social-btn">
+                  <i className="fab fa-github" />
+                </a>
+                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="footer-social-btn">
+                  <i className="fab fa-linkedin" />
+                </a>
+              </div>
+            </div>
+
+            <div className="footer-col">
+              <h4>Navigation</h4>
+              <ul className="footer-links">
+                {[
+                  ["Capabilities", "#features"],
+                  ["Live Console", "#demo"],
+                  ["Customer Cohorts", "#cohorts"],
+                  ["Model Telemetry", "#metrics"],
+                  ["FAQ", "#faq"],
+                ].map(([l, h]) => (
+                  <li key={l}>
+                    <a href={h}>{l}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="footer-col">
+              <h4>Tech Stack</h4>
+              {[
+                ["fa-cube", "Scikit-learn"],
+                ["fa-tree", "Random Forest"],
+                ["fa-server", "Flask"],
+                ["fab fa-react", "React 19"],
+                ["fa-bolt", "Vite"],
+                ["fa-database", "Pandas"],
+              ].map(([icon, name]) => (
+                <span className="tech-pill" key={name}>
+                  <i className={`${icon.startsWith("fab") ? "fab " : "fas "}${icon}`} />
+                  {name}
+                </span>
+              ))}
+            </div>
+
+            <div className="footer-col">
+              <h4>Creator</h4>
+              <div className="team-card">
+                <div className="team-row">
+                  <div className="team-avatar">
+                    <i className="fas fa-user" />
+                  </div>
+                  <div>
+                    <div className="team-name">Machine Learning Engineer</div>
+                    <div className="team-role">AI / ML · Full-Stack Developer</div>
+                  </div>
+                </div>
+              </div>
+              <p style={{ fontSize: ".8rem", color: "var(--text-secondary)", marginTop: ".85rem", lineHeight: 1.5 }}>
+                Dataset:{" "}
+                <a
+                  href="https://www.kaggle.com/datasets/blastchar/telco-customer-churn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "var(--accent-teal)", textDecoration: "none" }}
+                >
+                  Kaggle Telco Customer Churn
+                </a>
+              </p>
+            </div>
+          </div>
+
+          <div className="footer-bottom">
+            <span>© 2026 ChurnPulse · Customer Churn Prediction &amp; Retention AI</span>
+            <span>Built with <strong style={{ color: "var(--accent-teal)" }}>Scikit-learn &amp; React</strong></span>
+          </div>
+        </footer>
+      </div>
+
+      {/* ── Modal for Cohort Profile ── */}
+      {modal && (
+        <div
+          className="modal-overlay active"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setModal(null);
+          }}
+        >
+          <div className="modal-body">
+            <div className="modal-top-bar">
+              <span className="modal-heading">{modal.label}</span>
+              <button className="modal-close" onClick={() => setModal(null)}>
+                <i className="fas fa-times" />
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span className={`risk-tag ${modal.category === "High Risk" ? "risk-high" : modal.category === "Medium Risk" ? "risk-medium" : "risk-low"}`}>
+                  {modal.category}
+                </span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "1.1rem", fontWeight: 700, color: "#fff" }}>
+                  Historical Churn: {modal.prob}
+                </span>
+              </div>
+
+              <p style={{ fontSize: ".85rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                {modal.notes}
+              </p>
+
+              <div className="insight-grid" style={{ marginTop: ".5rem" }}>
+                <div className="insight-card">
+                  <div className="insight-title">Contract</div>
+                  <div className="insight-val">{modal.contract}</div>
+                </div>
+                <div className="insight-card">
+                  <div className="insight-title">Internet Service</div>
+                  <div className="insight-val">{modal.internet}</div>
+                </div>
+                <div className="insight-card">
+                  <div className="insight-title">Tenure</div>
+                  <div className="insight-val">{modal.tenure}</div>
+                </div>
+                <div className="insight-card">
+                  <div className="insight-title">Monthly Charges</div>
+                  <div className="insight-val">{modal.charges}</div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                <button
+                  className="btn btn-primary"
+                  style={{ flex: 1 }}
+                  onClick={() => {
+                    applyPreset(modal.data);
+                    setModal(null);
+                    window.location.hash = "#demo";
+                  }}
+                >
+                  <i className="fas fa-arrow-right" /> Load Profile into Live Console
+                </button>
+                <button className="btn btn-secondary" onClick={() => setModal(null)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Toast ── */}
+      <div className={`toast ${toast.type} ${toast.show ? "show" : ""}`}>
+        <i className={toast.type === "success" ? "fas fa-check-circle" : "fas fa-exclamation-circle"} />
+        <span>{toast.msg}</span>
+      </div>
+    </>
   );
 }
-
-export default App;

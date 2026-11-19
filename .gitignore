@@ -52,6 +52,7 @@ frontend/node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
 
 # Operating System & IDE
 .DS_Store
@@ -64,3 +65,9 @@ desktop.ini
 
 # Temporary duplicate model files in notebooks directory (models/ holds the actual serialized models)
 notebooks/*.pkl
+
+# Dummy reference directory
+dummy/
+
+
+
