@@ -38,7 +38,7 @@ An end-to-end Machine Learning web application designed to predict telecom custo
    npm install
    npm run dev
    ```
-3. **Open Browser:** Visit `[http://localhost:5173](https://churnpulse-frontend.onrender.com)`
+3. **Open Browser:** Visit `https://churnpulse-frontend.onrender.com`
 
 ---
 
