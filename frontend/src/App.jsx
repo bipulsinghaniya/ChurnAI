@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 
-const API_URL = "http://127.0.0.1:5000/predict";
+// const API_URL = "http://127.0.0.1:5000/predict";
+// const API_URL = "https://churnai-backend-5hs7.onrender.com";
+const API_URL = "https://churnai-backend-5hs7.onrender.com/predict";
 
 const DEFAULT_FORM = {
   gender: "Female",
@@ -376,7 +378,7 @@ export default function App() {
       showToast(`Prediction: ${result.result} (${result.churn_probability}%)`, "success");
     } catch (err) {
       const msg = err.message.includes("fetch")
-        ? "Cannot connect to Flask backend. Is 'python app.py' running on port 5000?"
+      ? "Unable to connect to the deployed Flask API. Please try again."
         : err.message;
       setError(msg);
       addLog(`[ERROR] ${msg}`, "log-warn");
